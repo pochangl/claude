@@ -1,0 +1,8 @@
+# Ignore everything
+*
+
+# Whitelist
+!.gitignore
+!CLAUDE.md
+!skills/
+!skills/**
