@@ -47,3 +47,4 @@ Brief explanation of the rule and why it matters.
 - Don't create the skill without rules — every optimize skill must have at least one rule.
 - Don't duplicate rules already covered by an existing optimize skill. Check existing skills first.
 - Don't add `user-invocable: true` — optimize skills are loaded automatically, not invoked directly.
+- Don't generate or infer rules the user did not explicitly describe. Only include rules the user provided.
