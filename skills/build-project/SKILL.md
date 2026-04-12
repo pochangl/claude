@@ -10,15 +10,15 @@ Before starting, commit any uncommitted changes using the `/commit` skill.
 
 Follow these three steps in order.
 
-## Step 1 — Update BUILD_CHECKLIST.md
+## Step 1 — Review docs/checklist.md
 
-Read every spec doc in the project root and sync the checklist so it fully reflects them.
+Read `docs/checklist.md` and the other docs files (`docs/user-workflow.md`, `docs/database-structure.md`, etc.) to ensure the checklist is consistent with the docs.
 
 **Rules:**
 - Add checklist items for any requirement in the docs that is not yet represented.
 - Remove or update items that no longer match the docs.
 - Preserve existing checked/unchecked state — never uncheck a completed item.
-- Keep the existing phase structure; add new phases only when a requirement doesn't fit an existing one.
+- Keep the existing section structure; add new sections only when a requirement doesn't fit an existing one.
 
 ## Step 2 — Load Optimization Rules
 
@@ -26,10 +26,10 @@ Before writing any code, read the `optimize-*` skills relevant to the tech stack
 
 ## Step 3 — Implement the Checklist
 
-Work through every unchecked `[ ]` item in `BUILD_CHECKLIST.md`:
+Work through every unchecked `[ ]` item in `docs/checklist.md`:
 
 1. Implement the feature or fix, following the optimization rules loaded in Step 2.
-2. Mark it `[x]` in `BUILD_CHECKLIST.md` when done.
+2. Mark it `[x]` in `docs/checklist.md` when done.
 3. Follow existing project skills for the relevant domain.
 
 ## Step 4 — Commit
