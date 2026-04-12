@@ -20,7 +20,7 @@ Always pass `response.content` as the second argument to `assertEqual` on status
 
 ## 4. Create Test Data with ORM Directly
 
-Use `utils.test.auth.create_user()` for users and `.objects.create()` for all other models. No factory libraries. Use `format="json"` for POST/PATCH/PUT requests with dict payloads.
+Use `utils.test.auth.create_user()` for users and `.objects.create()` for all other models. No factory libraries.
 
 ## 5. Test Isolation Between Users
 
