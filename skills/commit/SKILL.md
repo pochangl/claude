@@ -25,6 +25,7 @@ When staged changes span multiple unrelated concepts across different files, spl
    - Only if Claude was involved in generating the code changes (not just committing user-written code), end the message with: `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>`
    - Use a HEREDOC to pass the commit message
 5. Run `git status` after all commits to verify clean state.
+6. Push to the remote with `git push`.
 
 ## Commit Message Style
 
@@ -40,6 +41,5 @@ Common types: `docs`, `feat`, `fix`, `refactor`, `test`, `chore`
 
 - Don't use `git add -A` or `git add .`
 - Don't amend existing commits unless explicitly asked
-- Don't push unless explicitly asked
 - Don't skip hooks (`--no-verify`)
 - Don't mix unrelated concepts in one commit (unless they share a file)
