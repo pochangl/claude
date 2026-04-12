@@ -38,4 +38,4 @@ URL path segments must use singular nouns, not plural. DRF routers default to pl
 
 ## 8. Guard with Test Cases
 
-Every API endpoint must have test coverage. After optimizing, verify existing tests still pass. If tests don't exist, add them covering success paths, permission/auth failures, and edge cases. Use the `django-test` skill for test conventions.
+Every API endpoint must have test coverage. After optimizing, verify existing tests still pass. If tests don't exist, add them covering success paths, permission/auth failures, and edge cases. Use the `optimize-django-test` skill for test conventions.

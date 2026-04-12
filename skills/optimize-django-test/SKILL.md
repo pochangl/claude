@@ -1,6 +1,6 @@
 ---
-name: django-test
-description: Use this skill when writing Django test cases, test classes, or test files for this project. Trigger on requests like "write tests for", "add test coverage", "test this endpoint", "create test cases", or anytime a new test file or TestCase class needs to be authored.
+name: optimize-django-test
+description: Use this skill to enforce Django test conventions. Triggers on mentions of "write tests", "add test coverage", "test this endpoint", "create test cases", or when writing test files.
 ---
 
 # Django Test Writing Guide
