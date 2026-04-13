@@ -16,3 +16,4 @@ Django app directory names and `AppConfig.name` values must be singular when nam
 
 - **Correct:** `project`, `account`, `route`
 - **Incorrect:** `projects`, `accounts`, `routes`
+
