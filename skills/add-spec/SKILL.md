@@ -11,3 +11,4 @@ user-invocable: true
 3. Append or update the relevant section in that spec doc.
 4. If a build checklist exists in the project, add a corresponding unchecked `- [ ]` item to the appropriate section. If no checklist exists, skip this step.
 5. Do NOT implement the requirement — only update docs (and checklist if present).
+6. Commit the changes using the `/commit` skill.
