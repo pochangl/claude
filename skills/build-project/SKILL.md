@@ -26,12 +26,4 @@ Before writing any code, read the `optimize-*` skills relevant to the tech stack
 
 ## Step 3 — Implement the Checklist
 
-Work through every unchecked `[ ]` item in `docs/checklist.md`:
-
-1. Implement the feature or fix, following the optimization rules loaded in Step 2.
-2. Mark it `[x]` in `docs/checklist.md` when done.
-3. Follow existing project skills for the relevant domain.
-
-## Step 4 — Commit
-
-After all steps are complete, commit all changes using the `/commit` skill.
+Run `/implement-checklist` to work through unchecked items one at a time, committing and pushing after each.
