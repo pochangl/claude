@@ -28,3 +28,24 @@ if result['returncode'] != 0:
 if result['returncode'] != 0:
     raise RuntimeError(f'Command failed: {result["stderr"]}')
 ```
+
+## 3. Read Environment Variables at Module Level
+
+Environment variables that are required for the module to function must be read at the top level of the module (after imports), not inside functions or methods. This ensures the application fails early at import/startup time if a required variable is missing, rather than failing later at runtime when the code path is hit.
+
+- **Do** read from `os.environ` at module level and assign to a module-level constant.
+- **Do not** call `os.environ.get()` or `os.environ[]` inside functions or methods.
+
+```python
+# Bad — fails late, only when the function is called
+def setup_webhook(self):
+    secret = os.environ.get('GITHUB_WEBHOOK_SECRET', '')
+    if secret:
+        ...
+
+# Good — fails early at startup if missing
+GITHUB_WEBHOOK_SECRET = os.environ['GITHUB_WEBHOOK_SECRET']
+
+def setup_webhook(self):
+    ...
+```
