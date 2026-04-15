@@ -17,3 +17,20 @@ Django app directory names and `AppConfig.name` values must be singular when nam
 - **Correct:** `project`, `account`, `route`
 - **Incorrect:** `projects`, `accounts`, `routes`
 
+## 3. Import Settings at Module Level
+
+Always import `django.conf.settings` at the top of the module, not inline inside functions or methods. This ensures missing or misconfigured settings fail at import time rather than at runtime deep in a call stack.
+
+- **Correct:**
+  ```python
+  from django.conf import settings
+
+  CLAUDE_CLI_PATH = settings.CLAUDE_CLI_PATH
+  ```
+- **Incorrect:**
+  ```python
+  def run():
+      from django.conf import settings
+      cmd = [settings.CLAUDE_CLI_PATH, ...]
+  ```
+
