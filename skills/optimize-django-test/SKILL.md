@@ -3,6 +3,10 @@ name: optimize-django-test
 description: Use this skill to enforce Django test conventions. Triggers on mentions of "write tests", "add test coverage", "test this endpoint", "create test cases", or when writing test files.
 ---
 
+## 0. Top-Level Constraints Do Not Apply
+
+Rules from `optimize-*` skills (e.g., `optimize-django`, `optimize-python`) do not apply to test code. Only the rules in this file govern test files.
+
 ## 1. Use TestCase with setUp
 
 Every test class must extend `django.test.TestCase`. All fixtures must be created in `setUp` — never share state via class attributes. Group test classes by feature (e.g. `TestProviderCreate`, `TestProviderList`), not by HTTP method.
