@@ -51,3 +51,11 @@ Use `unittest.mock.patch` as a decorator or context manager for external calls (
 ## 8. WebSocket Test Cleanup
 
 Always call `await communicator.disconnect()` at the end of WebSocket tests. For unauthorized WebSocket tests, assert close code `4401`.
+
+## 8. Reproduce Bugs with a Failing Test First
+
+When fixing a bug, write a test that reproduces it **before** touching the implementation. Run it and confirm it fails for the expected reason (this proves the test actually exercises the bug). Only then write the fix, and rerun to confirm the test passes.
+
+- The reproduction test goes in the feature's existing test class (see Rule 1), asserting the correct behavior the bug violates.
+- A bug that reached production means the path was untested — leave the reproduction test in place as permanent regression coverage.
+- Do not start editing the implementation until you have a failing test; a fix without a failing test first is unverified.
