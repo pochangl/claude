@@ -149,6 +149,7 @@ Adapt to whatever the project actually needs.
 4. Write the deploy script at `/opt/deploy.sh`. **Important:**
    - Set `export HOME="/home/<user>"` so git SSH can find the deploy key.
    - Include: `git fetch`, `git reset --hard`, build, restart services, migrate, prune old images.
+   - **Run `docker builder prune -f` before the build step.** Build cache accumulates fast (5GB+ within days on a 10GB root disk); without this, deploys silently fail with `ENOSPC` from `npm install`/`pip install`. `docker image prune -f` alone does not free build cache.
    - Add a `flock` concurrency guard.
    - Log to `/var/log/webhook/deploy.log`.
 5. Write a systemd service for the webhook listener. **Important:**
