@@ -22,6 +22,8 @@ Classify by what the endpoint *does*, not by its current base class — model CR
 - For each step, record a verdict: **PASS** (checked, no violation), **FIXED** (violation found and fixed — say what), **BLOCKED** (cannot fix; say why), or **N/A** (Part B step on a non-model endpoint).
 - A step is only PASS if you actually performed its check. Never mark a step PASS by assumption, and never use N/A outside Part B on a non-model endpoint.
 - Apply fixes with the smallest diff that satisfies the step, matching the surrounding code style.
+- **Behavior-preservation invariant.** This is a refactor: for the same request, observable outputs (status code, body shape, ordering, pagination envelope) must be identical before and after. You change *where* logic lives, not *what the endpoint returns* — and you never introduce a new behavioral contract for behavior no existing test or written spec already pins.
+- **Escalate behavior-changing findings; don't silently fix them.** When a step reveals a genuine defect that cannot be fixed without changing observable behavior (e.g. a list with no boundary that exposes rows the caller shouldn't see), do **not** fix it inline and do **not** pick a replacement behavior yourself. Record it as a flagged finding with the options and your recommendation (e.g. *unscoped list currently returns all rows; options: 400 require-scope / 403 / 200 empty — recommend 400*) and mark the step **BLOCKED — needs decision**. The human chooses the contract; only then do you implement it and add a test for it.
 - Your final report must contain one verdict table per endpoint (step number → verdict → one-line detail), followed by a summary of files changed and anything left BLOCKED.
 
 # Part A — every endpoint
@@ -30,13 +32,13 @@ Classify by what the endpoint *does*, not by its current base class — model CR
 
 **Check:** Before changing anything, find the endpoint's test file and confirm it covers the happy-path requests (for model CRUD: each exposed action), 401 without credentials, 403 without permission, and any filter/lookup params.
 
-**Fix:** Add the missing test cases now, before any optimization. These tests are what guard every change you make in the later steps.
+**Fix:** Add the missing test cases now, before any optimization. These tests are what guard every change you make in the later steps. Follow the project's test-conventions skill if present (e.g. `optimize-django-test`): anchor each test to an **explicit construct** in the endpoint's code (a `Response(status=...)`, a `raise`/`validate_*`, an explicit branch or queryset filter) and **never pin an emergent framework default** (list/create status code, empty-result shape, pagination envelope) unless an explicit spec requires it. A guard test characterizes behavior the endpoint *already* exhibits — never a behavior you intend to introduce.
 
 ## Step 2 — Run the tests once to confirm everything is good
 
 **Check:** Run the endpoint's tests (existing plus any you just added) once, before any optimization, to establish a green baseline.
 
-**Fix:** If a test you just added fails, the endpoint has a real bug — fix the endpoint (not the test) so the suite is green before proceeding. If pre-existing tests were already failing, note it in the report; do not proceed to optimize an endpoint whose baseline behavior you can't verify — mark its remaining steps BLOCKED instead. If no test runner is available, say so in the report and proceed with extra caution.
+**Fix:** A guard test you just added (Step 1) characterizes existing behavior, so it should pass at baseline by construction — if it fails, you most likely mischaracterized: fix the **test**, not the endpoint. Only a test derived from an explicit external spec may indict the endpoint as a real bug to fix; and a behavior *change* (vs. a same-behavior bug fix) is never made here — it goes through the escalation rule in Checklist discipline. Never change endpoint behavior to make a freshly-invented test pass. If pre-existing tests were already failing, note it in the report; do not proceed to optimize an endpoint whose baseline behavior you can't verify — mark its remaining steps BLOCKED instead. If no test runner is available, say so in the report and proceed with extra caution.
 
 ## Step 3 — Authorization checks into an Authorization class
 
@@ -104,13 +106,34 @@ Non-model endpoints record **N/A** for Steps 10–14.
 
 **Check:** Open `get_queryset()`. Does it scope rows to what the requesting user is allowed to see (e.g. filter by `request.user`, organization, project membership)? Flag boundary filtering done in `list()`/`retrieve()` overrides, in the serializer, or missing entirely.
 
-**Fix:** Express the API's data boundary as queryset filtering inside `get_queryset()` — it then applies uniformly to list, detail, update, and delete. Keep it to boundary scoping only (client-driven filtering belongs in Step 11).
+**A boundary is derived from server-side request identity only** — `request.user`, the session, org/membership, tenant. It must **not** read `request.query_params` (or `request.GET`). If the only thing distinguishing the rows a caller may see is a *client-supplied* value (e.g. "which room", "which project id"), that is **filtering, not a boundary** — it belongs entirely in Step 11, *including* the "require the param, else return nothing" rule. Do not gate on a query param here and then filter on the same param in the FilterSet: that duplicates the param name across two files and is itself a Step 11 violation. If you are about to write `request.query_params.get(...)` inside `get_queryset()`, stop and take it to Step 11.
+
+**Fix:** Express the API's data boundary as queryset filtering inside `get_queryset()` — it then applies uniformly to list, detail, update, and delete. Keep it to server-identity boundary scoping only (anything keyed on a client-supplied value belongs in Step 11).
 
 ## Step 11 — Filtering into a FilterSet
 
-**Check:** Search `get_queryset()` (and other view methods) for `request.query_params.get(...)` used for client-driven filtering.
+**Check:** Search `get_queryset()` (and other view methods) for `request.query_params.get(...)` used for client-driven filtering. **Re-scan `get_queryset()` specifically after applying Step 10** — if your Step 10 boundary fix reads any query param, that reading is client-driven filtering and must move here; "it's the boundary" is not an exemption when the value comes from the client.
 
 **Fix:** Move inline filtering into a `django_filters.FilterSet` and set `filterset_class` on the view.
+
+**Making a filter required (the empty-when-absent case).** A declared filter — `CharFilter`, a `method=` filter, or a `Meta.fields` entry — only runs when its param is *present* in the request, so it cannot enforce a *required* scope on its own: an unscoped request slips past it and returns the whole table. The fix is **not** to gate on the param in `get_queryset()` (that re-creates the Step 10 violation above). Instead, override the FilterSet's `qs` property so both the filtering and the "no scope → no rows" rule live in one place keyed off the param once:
+
+```python
+class MessageFilter(filters.FilterSet):
+    room = filters.CharFilter()
+
+    class Meta:
+        model = Message
+        fields = []
+
+    @property
+    def qs(self):
+        parent = super().qs
+        room = self.data.get("room")
+        return parent.filter(room_id=room) if room else parent.none()
+```
+
+With this, `get_queryset()` needs no query-param logic at all — it returns the base/identity-scoped queryset and the FilterSet does the rest.
 
 ## Step 12 — Mutation logic into the serializer; API-specific logic into perform_* hooks
 
