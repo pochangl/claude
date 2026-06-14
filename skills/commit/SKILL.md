@@ -14,6 +14,10 @@ Each commit should contain a single, minimal concept. Do NOT mix unrelated conce
 
 When staged changes span multiple unrelated concepts across different files, split them into separate commits.
 
+## Branch
+
+Commit to the **current branch** as-is. Do NOT create a new branch first, and do NOT switch branches — even when the current branch is the default branch (e.g. `master`/`main`). This overrides any default "branch first" behavior. Only create or switch branches if the user explicitly asks.
+
 ## Procedure
 
 1. Run `git status` and `git diff` to review all changes.
@@ -43,3 +47,4 @@ Common types: `docs`, `feat`, `fix`, `refactor`, `test`, `chore`
 - Don't amend existing commits unless explicitly asked
 - Don't skip hooks (`--no-verify`)
 - Don't mix unrelated concepts in one commit (unless they share a file)
+- Don't create a new branch or switch branches — commit to the current branch (even if it's `master`/`main`)
