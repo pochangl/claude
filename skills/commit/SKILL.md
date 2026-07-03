@@ -18,18 +18,28 @@ When staged changes span multiple unrelated concepts across different files, spl
 
 Commit to the **current branch** as-is. Do NOT create a new branch first, and do NOT switch branches — even when the current branch is the default branch (e.g. `master`/`main`). This overrides any default "branch first" behavior. Only create or switch branches if the user explicitly asks.
 
+## Optimize Before Commit
+
+Before staging anything, optimize the changed code:
+
+1. From the diff, identify the tech stacks touched (e.g. `.ts`/`.tsx` → optimize-typescript, Python → optimize-python, Django models/apps → optimize-django, Dockerfiles → optimize-docker, comments → optimize-comment).
+2. Load each relevant `optimize-*` skill that is not already loaded.
+3. Audit the changed lines against those rules and fix any violations.
+4. Only optimize code the diff touches — do not rewrite unrelated code, and do not let fixes expand the commit's concept. A fix belongs in the same commit as the change it corrects.
+
 ## Procedure
 
 1. Run `git status` and `git diff` to review all changes.
 2. Run `git log --oneline -5` to match the repo's commit message style.
-3. Group changes by concept. If unrelated concepts are in separate files, plan multiple commits.
-4. For each commit:
+3. Optimize the changed code (see "Optimize Before Commit" above).
+4. Group changes by concept. If unrelated concepts are in separate files, plan multiple commits.
+5. For each commit:
    - Stage only the relevant files (`git add <file>...` — never `git add -A` or `git add .`)
    - Write a concise commit message in the repo's style (typically `type: description`)
    - Only if Claude was involved in generating the code changes (not just committing user-written code), end the message with: `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>`
    - Use a HEREDOC to pass the commit message
-5. Run `git status` after all commits to verify clean state.
-6. Push to the remote with `git push`.
+6. Run `git status` after all commits to verify clean state.
+7. Push to the remote with `git push`.
 
 ## Commit Message Style
 
