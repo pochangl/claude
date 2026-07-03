@@ -20,18 +20,21 @@ Commit to the **current branch** as-is. Do NOT create a new branch first, and do
 
 ## Optimize Before Commit
 
-Before staging anything, optimize the changed code:
+Before staging anything, optimize the changed code by delegating to a subagent (via the Agent tool). Do NOT optimize inline yourself — spawn an agent so the audit runs in its own context.
 
 1. From the diff, identify the tech stacks touched (e.g. `.ts`/`.tsx` → optimize-typescript, Python → optimize-python, Django models/apps → optimize-django, Dockerfiles → optimize-docker, comments → optimize-comment).
-2. Load each relevant `optimize-*` skill that is not already loaded.
-3. Audit the changed lines against those rules and fix any violations.
-4. Only optimize code the diff touches — do not rewrite unrelated code, and do not let fixes expand the commit's concept. A fix belongs in the same commit as the change it corrects.
+2. Launch a `general-purpose` agent with the list of changed files and the relevant `optimize-*` skills to apply. Instruct it to:
+   - Load each relevant `optimize-*` skill.
+   - Audit only the changed lines against those rules and fix any violations in place.
+   - Only optimize code the diff touches — do not rewrite unrelated code, and do not let fixes expand the commit's concept. A fix belongs in the same commit as the change it corrects.
+   - Report back which files it changed and what it fixed.
+3. Wait for the agent to finish before staging, then continue with the commit procedure.
 
 ## Procedure
 
 1. Run `git status` and `git diff` to review all changes.
 2. Run `git log --oneline -5` to match the repo's commit message style.
-3. Optimize the changed code (see "Optimize Before Commit" above).
+3. Optimize the changed code by delegating to an agent (see "Optimize Before Commit" above).
 4. Group changes by concept. If unrelated concepts are in separate files, plan multiple commits.
 5. For each commit:
    - Stage only the relevant files (`git add <file>...` — never `git add -A` or `git add .`)
