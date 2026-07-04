@@ -61,3 +61,39 @@ export async function setPreference(obj: Settings) {
 ```
 
 Two carve-outs: suppressing an *expected* rejection is fine (e.g. `audio.play().catch(() => {})` for autoplay-policy denials), and `try`/`finally` without a `catch` is fine when cleanup must run either way — the error still propagates.
+
+## 3. One Canonical Type — No Duplicated Shapes
+
+A domain shape (a model, a DTO, an API payload) has exactly one `interface`/`type`. Do not redeclare an identical shape locally; import the canonical one. When a consumer needs only a looser view, widen structurally (accept `{ first_name: string; last_name: string }`) rather than cloning the full type. This is the SSOT concept from `optimize-general` applied to TypeScript types.
+
+- **Correct:**
+```ts
+import { PublicUser } from "@/lib/publicUser";
+// a formatter over the minimal shape every profile satisfies:
+export const fullName = (u: { first_name: string; last_name: string }) =>
+  `${u.last_name} ${u.first_name}`.trim();
+```
+
+- **Incorrect:**
+```ts
+// re-declared in a component, identical to the canonical PublicUser
+interface PublicProfile { id: number; first_name: string; last_name: string; avatar_url: string }
+```
+
+## 4. One Canonical Fetch Per Endpoint
+
+Each API endpoint is reached through exactly one helper that owns its URL, query params, and response shape — routed through the shared client (`@/lib/api`'s `apiGet`/`apiPost`/`listData`), never a hand-rolled `fetch` or an inline duplicate URL. If a caller needs a variation, extend the existing helper (or add a sibling in the same module) rather than re-deriving the URL elsewhere. SSOT applied to data access.
+
+- **Correct:**
+```ts
+// one module owns the endpoint; every caller imports this
+export async function fetchPublicUser(id: number): Promise<PublicUser> {
+  return apiGet<PublicUser>(`/api/account/public_user_profile/${id}/?${URL_PARAMS}`);
+}
+```
+
+- **Incorrect:**
+```tsx
+// a page rebuilding the same URL inline while fetchPublicUser already exists
+const profile = await apiGet(`/api/account/public_user_profile/${id}/?format=json`);
+```

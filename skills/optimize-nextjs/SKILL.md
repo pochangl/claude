@@ -22,3 +22,10 @@ useEffect(() => setMounted(true), []);
 // Directly in JSX — causes hydration mismatch
 {new Date(timestamp).toLocaleString()}
 ```
+
+## 2. One Canonical Component — No Parallel Implementations
+
+A UI unit is built once and reused. Two components rendering the same thing — often the same source ported twice under different names, or an inline copy living beside a shared one — must be collapsed to one. Before writing a component, grep for an existing one (a shared file in `components/`, or an inline helper stamped with the same origin). To consolidate: pick the canonical file, reconcile the prop interface, rewire every consumer, delete the duplicate, and rebuild to confirm dependents are unchanged. This is the SSOT concept from `optimize-general` applied to React components.
+
+- **Correct:** one `CheckBoxChoice` in `components/problem/`; `ProblemAnswers` imports it instead of keeping an inline copy.
+- **Incorrect:** `MatchingGame.tsx` and `MatchingMixed.tsx` both porting the same `matching/Mixed.vue`; or an inline `ChoiceLabel` defined beside a shared `ChoiceLabel.tsx`.
