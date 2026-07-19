@@ -18,9 +18,10 @@ End users receive a multi-version range as one release. Long per-version lists w
 2. Run `git log --oneline <range>` to see all commits in the range.
 3. Filter and group:
    - Drop pure refactors, chores, version bumps, internal-only changes.
+   - Drop behavior/interaction tweaks to existing features (e.g. tap-to-enter instead of confirm, moving or renaming a section). Only new capabilities are worth a bullet.
    - Group related commits into a single bullet (e.g. multiple badge additions → one bullet).
-   - Keep `feat:` commits and user-visible `fix:` commits.
-4. Write ~5 bullets max, in the app's UI language (check `CLAUDE.md` or recent strings — Traditional Chinese for zh-TW apps, English for English apps, etc.).
+   - Keep `feat:` commits that add something new, and user-visible `fix:` commits.
+4. Write ~3 bullets, in the app's UI language (check `CLAUDE.md` or recent strings — Traditional Chinese for zh-TW apps, English for English apps, etc.). One short line each — name the feature, skip the rationale, the sub-steps, and the "更方便/更清楚" style justification.
 5. Lead with a single header line naming the final version only (e.g. `**3.8.25 更新**`), not each sub-version.
 6. Don't say which sub-version shipped which feature.
 
@@ -31,8 +32,6 @@ End users receive a multi-version range as one release. Long per-version lists w
 - <highlight 1>
 - <highlight 2>
 - <highlight 3>
-- <highlight 4>
-- <highlight 5>
 ```
 
 ## What NOT to Do
@@ -40,5 +39,7 @@ End users receive a multi-version range as one release. Long per-version lists w
 - Don't list every commit.
 - Don't split by sub-version.
 - Don't include refactors, dependency bumps, or internal-only changes.
-- Don't write more than ~5 bullets unless the user explicitly asks for more detail.
+- Don't include behavior adjustments to existing features — only new things.
+- Don't write more than ~3 bullets unless the user explicitly asks for more detail.
+- Don't pad a bullet with explanation, sub-details, or benefit claims — one clause is enough.
 - Don't translate commit messages literally — rewrite from the user's perspective.
