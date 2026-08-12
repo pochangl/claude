@@ -39,7 +39,7 @@ Before staging anything, optimize the changed code by delegating to a subagent (
 5. For each commit:
    - Stage only the relevant files (`git add <file>...` — never `git add -A` or `git add .`)
    - Write a concise commit message in the repo's style (typically `type: description`)
-   - Only if Claude was involved in generating the code changes (not just committing user-written code), end the message with: `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>`
+   - Only if Claude was involved in generating the code changes (not just committing user-written code), end the message with: `Co-Authored-By: <model> <noreply@anthropic.com>`, where `<model>` is the name of the model you are actually running as, exactly as your environment reports it (e.g. `Claude Opus 5 (1M context)`). Do not copy the example verbatim if you are a different model.
    - Use a HEREDOC to pass the commit message
 6. Run `git status` after all commits to verify clean state.
 7. Push to the remote with `git push`.
