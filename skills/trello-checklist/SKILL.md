@@ -18,6 +18,18 @@ card short id). `trello.sh env` prints which file applies. If it is missing,
 `trello.sh` prints a template — tell the user to create it (chmod 600); never
 create or edit it yourself.
 
+The same env file holds the **write whitelist**: board/list pairs whose cards
+may be written to, as a bash array (several pairs allowed):
+
+```bash
+TRELLO_WRITE_LISTS=("abc123/進行中" "def456/Done")
+```
+
+`<board>` is the board short id from `https://trello.com/b/<board>/...` (or its
+full id); `<list>` is the list name as shown on the board (or its full id).
+`trello.sh add` and `create-checklist` look up the target card's board and
+list and refuse unless they match a pair; unset or empty refuses every write.
+
 ## Hard rules
 
 - **Never print, echo, `cat`, or grep the key/token.** Only ever run `trello.sh`;
@@ -26,6 +38,9 @@ create or edit it yourself.
   The item format is not settled yet (see below) — the user decides the
   wording every time until it is.
 - Never delete or complete existing items. Adding is the only write.
+- Only write to cards whose board/list is in `TRELLO_WRITE_LISTS`. If
+  `trello.sh` refuses, report the board/list it printed and let the user
+  decide whether to add that pair — never work around the refusal.
 
 ## Procedure
 
@@ -68,11 +83,15 @@ next run drafts it that way without asking.
 ```
 trello.sh env                             # which ~/.config/trello/<repo>.env applies
 trello.sh me                              # verify credentials (prints username)
-trello.sh card [card]                     # card name + checklists (id, name, item count)
+trello.sh card [card]                     # card name, board/list, writable?, checklists (id, name, item count)
 trello.sh items <checklist-id>            # existing items: [x]/[ ] name
 trello.sh add <checklist-id> < items.txt  # add one item per non-blank stdin line
 trello.sh create-checklist [card] <name>  # create a checklist, prints its id
+trello.sh board <board>                   # read-only: open lists, cards, descriptions, checklists
+trello.sh create-card <board>/<list> < cards.tsv  # one card per line: "name<TAB>description"
 ```
+`create-card` checks `<board>/<list>` against `TRELLO_WRITE_LISTS` before
+creating anything; show the drafted cards and get approval first, as with `add`.
 `[card]` defaults to `TRELLO_CARD`.
 
 Non-2xx responses print `trello API ... failed: HTTP <code>` and exit
