@@ -29,6 +29,7 @@
 #   trello.sh attachments <card>              # attachment name<TAB>url
 #   trello.sh set-desc <card> < desc.md       # replace the card description with stdin
 #   trello.sh comment <card> < comment.md     # post stdin as a new comment on the card
+#   trello.sh rename-card <card> <name>       # replace the card's title
 #   trello.sh comments [card]                 # existing comments: id, date, author, text
 #   trello.sh edit-comment <id> < comment.md  # replace one of your own comments' text
 #
@@ -316,6 +317,13 @@ for a in json.load(sys.stdin):
     [ -n "$text" ] || { echo "empty comment" >&2; exit 1; }
     api POST "/cards/$card/actions/comments?$AUTH" --data-urlencode "text=$text" >/dev/null
     echo "comment added"
+    ;;
+  rename-card)
+    card=${1:?card}
+    name=${2:?new name}
+    require_writable_card "$card"
+    api PUT "/cards/$card?$AUTH" --data-urlencode "name=$name" >/dev/null
+    echo "renamed: $name"
     ;;
   comments)
     card=${1:-${TRELLO_CARD:-}}
