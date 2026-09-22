@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 # Minimal Trello checklist helper. Credentials are per repo: the file
 # ~/.config/trello/<repo>.env (repo = basename of the git toplevel) must export
-# TRELLO_KEY and TRELLO_TOKEN, and may export TRELLO_CARD as the default card.
-# They are never echoed.
+# TRELLO_KEY, TRELLO_TOKEN and TRELLO_BOARD (the board this repo's work lives
+# on: the short id from https://trello.com/b/<board>/... or the full id), and
+# may export TRELLO_CARD as the default card. They are never echoed.
 #
-# Writes only touch cards sitting in a whitelisted board/list pair, set in the
-# same env file as a bash array (board = short id from https://trello.com/b/<board>/...
-# or full id; list = name or full id). Unset or empty means every write is refused.
-#   TRELLO_WRITE_LISTS=("abc123/進行中" "def456/Done")
+# Writes only touch cards sitting in a whitelisted list of TRELLO_BOARD, set in
+# the same env file as a bash array of list names (as shown on the board) or
+# list ids. Unset or empty means every write is refused.
+#   TRELLO_WRITE_LISTS=("進行中" "Done")
+# A legacy "<board>/<list>" entry still works and pins its own board.
+#
+# Reads are whitelisted the same way, with TRELLO_READ_LISTS. Anything
+# writable is readable too, so TRELLO_READ_LISTS only needs the lists that are
+# read-only. With both unset every read is refused; `board` prints just the
+# readable lists rather than the whole board.
+#   TRELLO_READ_LISTS=("待辦")
 #
 #   trello.sh env                             # show which env file this repo uses
 #   trello.sh me                              # verify credentials (prints username)
@@ -15,8 +23,12 @@
 #   trello.sh items <checklist-id>            # existing items, one per line: [x]/[ ] name
 #   trello.sh add <checklist-id> < items.txt  # add one item per non-blank stdin line
 #   trello.sh create-checklist [card] <name>  # create a checklist on the card, prints its id
-#   trello.sh board <board>                   # open lists and cards with descriptions/checklists
-#   trello.sh create-card <board>/<list> < cards.tsv  # one card per line: name<TAB>description
+#   trello.sh board [board]                   # open lists and cards; defaults to TRELLO_BOARD
+#   trello.sh create-card <list> < cards.tsv  # one card per line: name<TAB>description
+#   trello.sh attach <card> <file>...         # upload files as attachments to the card
+#   trello.sh attachments <card>              # attachment name<TAB>url
+#   trello.sh set-desc <card> < desc.md       # replace the card description with stdin
+#   trello.sh comment <card> < comment.md     # post stdin as a new comment on the card
 #
 # [card] is the short id from the URL (https://trello.com/c/<card>/...) or a full
 # card id; when omitted, TRELLO_CARD from the env file is used.
@@ -35,8 +47,9 @@ fi
   echo "missing $ENV_FILE — create it (chmod 600) with:" >&2
   echo "  export TRELLO_KEY=...    # https://trello.com/power-ups/admin → API key" >&2
   echo "  export TRELLO_TOKEN=...  # https://trello.com/1/authorize?expiration=never&scope=read,write&response_type=token&name=daily-checklist&key=<KEY>" >&2
+  echo "  export TRELLO_BOARD=...  # board short id from https://trello.com/b/<board>/..." >&2
   echo "  export TRELLO_CARD=      # optional default card short id" >&2
-  echo '  TRELLO_WRITE_LISTS=("<board>/<list>")  # writable board/list pairs' >&2
+  echo '  TRELLO_WRITE_LISTS=("<list>")  # lists on TRELLO_BOARD that may be written to' >&2
   exit 1
 }
 # shellcheck disable=SC1090
@@ -72,17 +85,40 @@ print("\t".join([d["idBoard"], d["board"]["shortLink"], d["board"]["name"], d["i
 ')
 }
 
-# Expects card_location to have run for the card.
-location_writable() {
-  local pair b l
-  for pair in ${TRELLO_WRITE_LISTS[@]+"${TRELLO_WRITE_LISTS[@]}"}; do
-    b=${pair%%/*}
-    l=${pair#*/}
+# Expects card_location to have run. True when the card's board and list match
+# one of the "$@" whitelist entries; a legacy "<board>/<list>" entry pins its own
+# board instead of TRELLO_BOARD, so env files written before TRELLO_BOARD existed
+# keep working.
+location_matches() {
+  local entry b l
+  for entry in "$@"; do
+    if [[ $entry == */* ]]; then
+      b=${entry%%/*}
+      l=${entry#*/}
+    else
+      b=${TRELLO_BOARD:-}
+      l=$entry
+    fi
+    if [ -z "$b" ]; then
+      continue
+    fi
     if [[ ($b == "$board_id" || $b == "$board_short") && ($l == "$list_id" || $l == "$list_name") ]]; then
       return 0
     fi
   done
   return 1
+}
+
+location_writable() {
+  location_matches ${TRELLO_WRITE_LISTS[@]+"${TRELLO_WRITE_LISTS[@]}"}
+}
+
+# Writable implies readable — a list you may post to is one you may look at —
+# so the two whitelists are unioned rather than checked separately.
+location_readable() {
+  location_matches \
+    ${TRELLO_READ_LISTS[@]+"${TRELLO_READ_LISTS[@]}"} \
+    ${TRELLO_WRITE_LISTS[@]+"${TRELLO_WRITE_LISTS[@]}"}
 }
 
 require_writable_card() {
@@ -91,6 +127,21 @@ require_writable_card() {
     echo "refused: card is in board \"$board_name\" ($board_short) / list \"$list_name\", not in TRELLO_WRITE_LISTS of $ENV_FILE" >&2
     exit 1
   }
+}
+
+require_readable_card() {
+  card_location "$1"
+  location_readable || {
+    echo "refused: card is in board \"$board_name\" ($board_short) / list \"$list_name\", not in TRELLO_READ_LISTS or TRELLO_WRITE_LISTS of $ENV_FILE" >&2
+    exit 1
+  }
+}
+
+# The card a checklist hangs off, so `items` can be gated like any other read.
+checklist_card() {
+  local out
+  out=$(api GET "/checklists/$1?$AUTH&fields=idCard")
+  printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin)["idCard"])'
 }
 
 cmd=${1:-}; shift || true
@@ -102,8 +153,8 @@ case "$cmd" in
   card)
     card=${1:-${TRELLO_CARD:-}}
     [ -n "$card" ] || { echo "no card given and TRELLO_CARD not set in $ENV_FILE" >&2; exit 1; }
+    require_readable_card "$card"
     out=$(api GET "/cards/$card?$AUTH&fields=name,shortUrl&checklists=all&checklist_fields=name")
-    card_location "$card"
     if location_writable; then writable=yes; else writable=no; fi
     printf '%s' "$out" | python3 -c '
 import sys, json
@@ -116,6 +167,7 @@ for c in d.get("checklists", []):
     ;;
   items)
     checklist=${1:?checklist id}
+    require_readable_card "$(checklist_card "$checklist")"
     out=$(api GET "/checklists/$checklist/checkItems?$AUTH&fields=name,state,pos")
     printf '%s' "$out" | python3 -c '
 import sys, json
@@ -124,16 +176,38 @@ for i in sorted(json.load(sys.stdin), key=lambda i: i["pos"]):
 '
     ;;
   board)
-    board=${1:?board short id}
-    out=$(api GET "/boards/$board?$AUTH&fields=name,url&lists=open&list_fields=name,pos&cards=open&card_fields=name,desc,idList,labels,due,shortUrl,pos&checklists=all&checklist_fields=name,idCard")
-    printf '%s' "$out" | python3 -c '
-import sys, json
+    board=${1:-${TRELLO_BOARD:-}}
+    [ -n "$board" ] || { echo "no board given and TRELLO_BOARD not set in $ENV_FILE" >&2; exit 1; }
+    out=$(api GET "/boards/$board?$AUTH&fields=name,url,shortLink&lists=open&list_fields=name,pos&cards=open&card_fields=name,desc,idList,labels,due,shortUrl,pos&checklists=all&checklist_fields=name,idCard")
+    # Reading the board shows only the whitelisted lists — the rest of the
+    # board is none of this repo's business.
+    printf '%s' "$out" | ALLOWED_LISTS=$(printf '%s\n' \
+      ${TRELLO_READ_LISTS[@]+"${TRELLO_READ_LISTS[@]}"} \
+      ${TRELLO_WRITE_LISTS[@]+"${TRELLO_WRITE_LISTS[@]}"}) \
+      DEFAULT_BOARD="${TRELLO_BOARD:-}" python3 -c '
+import os, sys, json
 d = json.load(sys.stdin)
+entries = [e for e in os.environ.get("ALLOWED_LISTS", "").split("\n") if e]
+default_board = os.environ.get("DEFAULT_BOARD", "")
+
+def allowed(lst):
+    for entry in entries:
+        if "/" in entry:
+            board, name = entry.split("/", 1)
+        else:
+            board, name = default_board, entry
+        if board and board in (d["id"], d["shortLink"]) and name in (lst["id"], lst["name"]):
+            return True
+    return False
+
+lists = [l for l in sorted(d["lists"], key=lambda l: l["pos"]) if allowed(l)]
+if not lists:
+    sys.exit("no readable list on board %s — add one to TRELLO_READ_LISTS" % d["name"])
 print("# " + d["name"] + "  " + d["url"])
 checklists = {}
 for c in d.get("checklists", []):
     checklists.setdefault(c["idCard"], []).append(c)
-for l in sorted(d["lists"], key=lambda l: l["pos"]):
+for l in lists:
     cards = sorted((c for c in d["cards"] if c["idList"] == l["id"]), key=lambda c: c["pos"])
     print("\n## %s  [%s]  (%d cards)" % (l["name"], l["id"], len(cards)))
     for c in cards:
@@ -151,8 +225,7 @@ for l in sorted(d["lists"], key=lambda l: l["pos"]):
     ;;
   add)
     checklist=${1:?checklist id}
-    out=$(api GET "/checklists/$checklist?$AUTH&fields=idCard")
-    require_writable_card "$(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin)["idCard"])')"
+    require_writable_card "$(checklist_card "$checklist")"
     n=0
     while IFS= read -r line || [ -n "$line" ]; do
       [ -z "${line// }" ] && continue
@@ -163,9 +236,15 @@ for l in sorted(d["lists"], key=lambda l: l["pos"]):
     echo "$n item(s) added"
     ;;
   create-card)
-    target=${1:?board/list}
-    board=${target%%/*}
-    list=${target#*/}
+    target=${1:?list name}
+    if [[ $target == */* ]]; then
+      board=${target%%/*}
+      list=${target#*/}
+    else
+      board=${TRELLO_BOARD:-}
+      list=$target
+      [ -n "$board" ] || { echo "no board in \"$target\" and TRELLO_BOARD not set in $ENV_FILE" >&2; exit 1; }
+    fi
     out=$(api GET "/boards/$board?$AUTH&fields=name,shortLink&lists=open&list_fields=name")
     IFS=$'\t' read -r board_id board_short board_name list_id list_name < <(
       printf '%s' "$out" | python3 -c '
@@ -195,6 +274,42 @@ else:
     done
     echo "$n card(s) created"
     ;;
+  attach)
+    card=${1:?card}
+    shift
+    [ $# -gt 0 ] || { echo "no files given" >&2; exit 1; }
+    require_writable_card "$card"
+    for file in "$@"; do
+      [ -f "$file" ] || { echo "not a file: $file" >&2; exit 1; }
+      api POST "/cards/$card/attachments?$AUTH" -F "file=@$file" -F "name=$(basename "$file")" >/dev/null
+      echo "attached: $(basename "$file")"
+    done
+    ;;
+  attachments)
+    card=${1:?card}
+    require_readable_card "$card"
+    out=$(api GET "/cards/$card/attachments?$AUTH&fields=name,url")
+    printf '%s' "$out" | python3 -c '
+import sys, json
+for a in json.load(sys.stdin):
+    print(a["name"] + "\t" + a["url"])
+'
+    ;;
+  set-desc)
+    card=${1:?card}
+    require_writable_card "$card"
+    desc=$(cat)
+    api PUT "/cards/$card?$AUTH" --data-urlencode "desc=$desc" >/dev/null
+    echo "description updated"
+    ;;
+  comment)
+    card=${1:?card}
+    require_writable_card "$card"
+    text=$(cat)
+    [ -n "$text" ] || { echo "empty comment" >&2; exit 1; }
+    api POST "/cards/$card/actions/comments?$AUTH" --data-urlencode "text=$text" >/dev/null
+    echo "comment added"
+    ;;
   create-checklist)
     if [ $# -ge 2 ]; then card=$1; name=$2; else card=${TRELLO_CARD:-}; name=${1:?checklist name}; fi
     [ -n "$card" ] || { echo "no card given and TRELLO_CARD not set in $ENV_FILE" >&2; exit 1; }
@@ -203,7 +318,8 @@ else:
     printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])'
     ;;
   *)
-    sed -n '2,22p' "$0" >&2
+    # Every comment line of the header, so adding usage lines never truncates it.
+    awk 'NR > 1 && /^#/ { print; next } NR > 1 { exit }' "$0" >&2
     exit 1
     ;;
 esac
