@@ -54,7 +54,14 @@ try another route to it.
 - **Always show the drafted items and get explicit approval before `add`.**
   The item format is not settled yet (see below) — the user decides the
   wording every time until it is.
-- Never delete or complete existing items. Adding is the only write.
+- Never delete or complete existing items, and never delete a comment.
+- A comment may be **edited only to correct a plain factual slip** — a wrong
+  version number, a mistyped hash. Never edit one to change what it claimed at
+  the time (an attempt into a success, a doubt into a certainty): post a new
+  comment, whose timestamp is the point. Editing keeps the original timestamp
+  and Trello marks it `(edited)`, but the previous text is gone for good, so
+  show the user the replacement text and get approval first, as with any write.
+  This is provisional — drop `edit-comment` once the comment format settles.
 - Only touch cards on `TRELLO_BOARD` in a whitelisted list — writes need
   `TRELLO_WRITE_LISTS`, reads need either array. If `trello.sh` refuses,
   report the board/list it printed and let the user decide whether to add that
@@ -120,11 +127,15 @@ trello.sh attach <card> <file>...         # upload files as attachments to the c
 trello.sh attachments <card>              # read-only: attachment name<TAB>url
 trello.sh set-desc <card> < desc.md       # replace the card description with stdin
 trello.sh comment <card> < comment.md     # post stdin as a new comment on the card
+trello.sh comments [card]                 # read-only: id, date, author, text of each comment
+trello.sh edit-comment <id> < comment.md  # replace the text of one of your own comments
 ```
 `create-card`, `attach`, `set-desc`, and `comment` check the target against
 `TRELLO_WRITE_LISTS` before writing anything; show the drafted cards and get
-approval first, as with `add`. `card`, `items`, `attachments` and `board`
-check it against the read whitelist and refuse the same way.
+approval first, as with `add`. `card`, `items`, `attachments`, `comments` and
+`board` check it against the read whitelist and refuse the same way.
+`edit-comment` checks the comment's own card against the write whitelist;
+Trello itself refuses anyone but the comment's author.
 `[card]` defaults to `TRELLO_CARD`; `[board]` and `create-card`'s board
 default to `TRELLO_BOARD`.
 

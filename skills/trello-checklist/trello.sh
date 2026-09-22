@@ -29,6 +29,13 @@
 #   trello.sh attachments <card>              # attachment name<TAB>url
 #   trello.sh set-desc <card> < desc.md       # replace the card description with stdin
 #   trello.sh comment <card> < comment.md     # post stdin as a new comment on the card
+#   trello.sh comments [card]                 # existing comments: id, date, author, text
+#   trello.sh edit-comment <id> < comment.md  # replace one of your own comments' text
+#
+# Editing a comment keeps its original timestamp (a Trello id encodes the
+# creation time), and Trello marks it "(edited)". It is provisional: it exists
+# for fixing a plain factual slip, not for rewriting what a card said. Drop it
+# once the comment format has settled.
 #
 # [card] is the short id from the URL (https://trello.com/c/<card>/...) or a full
 # card id; when omitted, TRELLO_CARD from the env file is used.
@@ -309,6 +316,38 @@ for a in json.load(sys.stdin):
     [ -n "$text" ] || { echo "empty comment" >&2; exit 1; }
     api POST "/cards/$card/actions/comments?$AUTH" --data-urlencode "text=$text" >/dev/null
     echo "comment added"
+    ;;
+  comments)
+    card=${1:-${TRELLO_CARD:-}}
+    [ -n "$card" ] || { echo "no card given and TRELLO_CARD not set in $ENV_FILE" >&2; exit 1; }
+    require_readable_card "$card"
+    out=$(api GET "/cards/$card/actions?$AUTH&filter=commentCard&memberCreator=true&memberCreator_fields=username&limit=50")
+    printf '%s' "$out" | python3 -c '
+import sys, json
+actions = json.load(sys.stdin)
+if not actions:
+    print("(no comments)")
+# Trello returns newest first; print oldest first so the card reads in order.
+for a in reversed(actions):
+    who = (a.get("memberCreator") or {}).get("username", "?")
+    edited = "  (edited)" if a.get("data", {}).get("dateLastEdited") else ""
+    print("%s  %s  %s%s" % (a["id"], a["date"], who, edited))
+    for line in a["data"]["text"].splitlines():
+        print("  " + line)
+    print()
+'
+    ;;
+  edit-comment)
+    action=${1:?comment action id}
+    # Trello only lets the author edit their own comment, so there is no owner
+    # check here — the API refuses anyone else.
+    out=$(api GET "/actions/$action?$AUTH&fields=data")
+    require_writable_card "$(printf '%s' "$out" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["card"]["id"])')"
+    text=$(cat)
+    [ -n "$text" ] || { echo "empty comment" >&2; exit 1; }
+    # The nested field endpoint names the new text "value", not "text".
+    api PUT "/actions/$action/text?$AUTH" --data-urlencode "value=$text" >/dev/null
+    echo "comment updated"
     ;;
   create-checklist)
     if [ $# -ge 2 ]; then card=$1; name=$2; else card=${TRELLO_CARD:-}; name=${1:?checklist name}; fi
