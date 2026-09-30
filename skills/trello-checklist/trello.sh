@@ -30,6 +30,8 @@
 #   trello.sh set-desc <card> < desc.md       # replace the card description with stdin
 #   trello.sh comment <card> < comment.md     # post stdin as a new comment on the card
 #   trello.sh rename-card <card> <name>       # replace the card's title
+#   trello.sh archive <card>...               # archive cards, one API call each
+#   trello.sh unarchive <card>...             # put archived cards back on their list
 #   trello.sh comments [card]                 # existing comments: id, date, author, text
 #   trello.sh edit-comment <id> < comment.md  # replace one of your own comments' text
 #
@@ -37,6 +39,11 @@
 # creation time), and Trello marks it "(edited)". It is provisional: it exists
 # for fixing a plain factual slip, not for rewriting what a card said. Drop it
 # once the comment format has settled.
+#
+# Archiving keeps the card, its comments and its checklists — it only takes it
+# off the list, and `unarchive` puts it back where it was. `board` shows open
+# cards only, so an archived card is invisible to it; keep the short id if you
+# mean to bring it back.
 #
 # [card] is the short id from the URL (https://trello.com/c/<card>/...) or a full
 # card id; when omitted, TRELLO_CARD from the env file is used.
@@ -324,6 +331,17 @@ for a in json.load(sys.stdin):
     require_writable_card "$card"
     api PUT "/cards/$card?$AUTH" --data-urlencode "name=$name" >/dev/null
     echo "renamed: $name"
+    ;;
+  archive|unarchive)
+    [ $# -ge 1 ] || { echo "no card given" >&2; exit 1; }
+    if [ "$cmd" = archive ]; then closed=true; else closed=false; fi
+    # Each card is gated on its own: one card outside the whitelist stops the run
+    # rather than being skipped, so a typo cannot half-archive a batch.
+    for card in "$@"; do require_writable_card "$card"; done
+    for card in "$@"; do
+      api PUT "/cards/$card?$AUTH" --data-urlencode "closed=$closed" >/dev/null
+      echo "$cmd: $card"
+    done
     ;;
   comments)
     card=${1:-${TRELLO_CARD:-}}
