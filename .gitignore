@@ -8,3 +8,7 @@
 !skills/**
 !agents/
 !agents/**
+
+# Auto-synced official skills bucket — Claude Code re-syncs these on its own;
+# tracking them just churns the repo and bloats it.
+skills/synced/
