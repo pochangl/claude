@@ -1,11 +1,11 @@
 ---
 name: optimize-comment
-description: Use this skill to write or optimize code comments. Triggers on mentions of "write a comment", "optimize comment", "add a comment", "comment this", or whenever adding comments to code.
+description: Use this skill to write or optimize code comments. Triggers on mentions of "write a comment", "optimize comment", "add a comment", "comment this", "deprecate", "deprecated", or whenever adding comments or deprecation notes to code.
 ---
 
 A comment must explain something the reader cannot get from reading the code itself. If it does not, delete it.
 
-**Out of scope — never delete or rewrite these:** `TODO`, `FIXME`, `HACK`, `XXX`, `NOTE`, deprecation notes, license/copyright headers, and doc comments (`///`, docstrings, JSDoc). These are intentional markers about future work, known issues, or public API — not descriptions of current behavior. The rules below apply only to ordinary explanatory comments.
+**Out of scope — never delete or rewrite these:** `TODO`, `FIXME`, `HACK`, `XXX`, `NOTE`, deprecation notes, license/copyright headers, and doc comments (`///`, docstrings, JSDoc). These are intentional markers about future work, known issues, or public API — not descriptions of current behavior. Rules 1–3 apply only to ordinary explanatory comments; rule 4 governs how a deprecation note is written.
 
 ## 1. Do Not Comment What Is Not In the Code
 
@@ -51,3 +51,24 @@ Keep a comment only when it adds a *why* that the code cannot show:
 - A deliberate, surprising tradeoff a maintainer would otherwise "fix".
 
 Prefer one tight line. Never paraphrase the adjacent code.
+
+## 4. Date Every Deprecation
+
+A deprecation note — a `deprecated` comment, Go's `// Deprecated:`, Dart's `@Deprecated(...)`, JSDoc `@deprecated` — must say:
+
+- **Since when**: the date it was deprecated, `YYYY-MM-DD`.
+- **Removal date**: when it may be removed. Default to **3 months after** the deprecation date unless the user names another.
+- **The replacement**: what callers should use instead.
+
+Without dates nobody can tell later whether the thing is safe to delete.
+
+```python
+# Bad — no dates; nobody knows when it can go
+# deprecated: clients read pictures from public_user_profile/set/
+
+# Good
+# deprecated since 2026-10-13, remove after 2027-01-13: clients read
+# pictures from public_user_profile/set/
+```
+
+When the codebase has a structured way to declare it (e.g. a `deprecated_since` / `sunset` pair on a view), set those instead of, or in addition to, the comment, using the same dates.
