@@ -54,10 +54,15 @@ type: short description
 
 Common types: `docs`, `feat`, `fix`, `refactor`, `test`, `chore`
 
+### No external references
+
+A commit message, like a comment, is read later by developers who have this repo and its related projects — the other parts of the same product (its backend, a sibling client, a browser extension, its web version), which may be named, as optimize-comment rule 5 defines them. Never name an unrelated project, its files, specs or paths, or anything on your machine — not even "ported from <other-repo>". Describe the change on its own terms. Before committing, grep the message and the staged diff for the name of any unrelated project the work drew on; the same goes for PR titles and descriptions.
+
 ## What NOT to Do
 
 - Don't use `git add -A` or `git add .`
 - Don't amend existing commits unless explicitly asked
 - Don't skip hooks (`--no-verify`)
 - Don't mix unrelated concepts in one commit (unless they share a file)
+- Don't name an unrelated project or its files in a commit message or PR description (related parts of the same product are fine)
 - Don't create a new branch or switch branches — commit to the current branch (even if it's `master`/`main`)

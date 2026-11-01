@@ -5,7 +5,7 @@ description: Use this skill to write or optimize code comments. Triggers on ment
 
 A comment must explain something the reader cannot get from reading the code itself. If it does not, delete it.
 
-**Out of scope — never delete or rewrite these:** `TODO`, `FIXME`, `HACK`, `XXX`, `NOTE`, deprecation notes, license/copyright headers, and doc comments (`///`, docstrings, JSDoc). These are intentional markers about future work, known issues, or public API — not descriptions of current behavior. Rules 1–3 apply only to ordinary explanatory comments; rule 4 governs how a deprecation note is written.
+**Out of scope — never delete or rewrite these:** `TODO`, `FIXME`, `HACK`, `XXX`, `NOTE`, deprecation notes, license/copyright headers, and doc comments (`///`, docstrings, JSDoc). These are intentional markers about future work, known issues, or public API — not descriptions of current behavior. Rules 1–3 apply only to ordinary explanatory comments; rule 4 governs how a deprecation note is written. Rule 5 applies to every comment, doc comments included.
 
 ## 1. Do Not Comment What Is Not In the Code
 
@@ -72,3 +72,24 @@ Without dates nobody can tell later whether the thing is safe to delete.
 ```
 
 When the codebase has a structured way to declare it (e.g. a `deprecated_since` / `sunset` pair on a view), set those instead of, or in addition to, the comment, using the same dates.
+
+## 5. No References a Reader Cannot Follow
+
+A comment may point only at things a future developer of this repo can open:
+
+- its own files and docs;
+- **related projects** — the other parts of the same product, which that developer works with too: its backend, a sibling client, a browser extension, its web version (e.g. the backend view an app's client code calls). A sign a repo is related: this repo's `CLAUDE.md` names it, the code already cites it, or the two share an API or data;
+- public resources (a published issue, the framework's docs).
+
+Never name an **unrelated** project — another product that merely shares an idea or that the code was ported from — nor its files, specs or paths, nor anything on your machine. Whoever reads this repo later has no access to it, so the reference is a dead end. Explain the idea on its own terms instead. When unsure whether a repo is related, ask.
+
+```dart
+// Bad — points at an unrelated project's spec the reader can't open
+/// Ported from other-app (its `docs/specs/refresh-hold.md`): while held,
+/// a request schedules nothing.
+
+// Good — says what it does here
+/// While held (the owner is off screen) a request schedules nothing.
+```
+
+Before finishing, grep the changed comments for the name of any unrelated project the work drew on, and for paths that exist neither in this repo nor in a related one.
