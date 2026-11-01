@@ -3,7 +3,7 @@ name: websocket-token-auth
 description: Use this skill when adding or changing Channels WebSocket endpoints. Triggers on mentions of "WebSocket", "ws", "consumer", "token auth middleware", "4401", or WebSocket endpoint paths.
 ---
 
-# WebSocket + Token Auth Skill (SealChat Style)
+# WebSocket + Token Auth Skill
 
 All backend code lives under `backend/`. All paths in this skill are relative to `backend/`.
 

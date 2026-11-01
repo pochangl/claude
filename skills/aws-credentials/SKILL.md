@@ -18,7 +18,7 @@ import json
 from botocore.exceptions import ClientError
 
 def get_secret():
-    secret_name = "sealchat"
+    secret_name = "<project>"
     region_name = "ap-northeast-1"
 
     session = boto3.session.Session()
@@ -46,7 +46,7 @@ def get_secret():
 4. **Log without exposing secrets** — never log credential values
 5. **Handle credential expiration gracefully** — implement clear_cache() on errors
 6. **Use Secrets Manager for all sensitive data** — not just database passwords
-7. **Organize secrets hierarchically** — e.g., `sealchat/database`, `sealchat/api-keys`
+7. **Organize secrets hierarchically** — e.g., `<project>/database`, `<project>/api-keys`
 8. **Test with Moto** — mock Secrets Manager in unit tests
 9. **Monitor access logs** — CloudTrail logs all Secrets Manager API calls
 10. **Implement retry logic** — handle transient failures gracefully

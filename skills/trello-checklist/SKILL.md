@@ -11,7 +11,7 @@ directory (`~/.claude/skills/trello-checklist/trello.sh`).
 
 Credentials are **per repo**: `trello.sh` sources
 `~/.config/trello/<repo>.env`, where `<repo>` is the basename of the git
-toplevel of the current directory (e.g. `app.env`, `e4f.env`). Each project
+toplevel of the current directory (e.g. `myapp.env` for a repo named `myapp`). Each project
 has its own Trello workspace, so there is no shared fallback. The file
 exports `TRELLO_KEY`, `TRELLO_TOKEN`, `TRELLO_BOARD` (the board this repo's
 work lives on) and optionally `TRELLO_CARD` (default card short id).

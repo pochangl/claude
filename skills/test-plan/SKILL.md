@@ -9,17 +9,22 @@ user-invocable: true
 Turns "give me a test plan for 1.1.49 and 1.1.50" into one page a tester works
 through on real devices: where to tap, what they should see, and a Pass / Fail
 mark per check. The page is always published to the project's **fixed** artifact
-below — never to a new URL.
+— never to a new URL.
 
 ## Where the plan lives
 
-| Repo | Artifact (update in place) |
-| --- | --- |
-| `~/workspace/app` (PRS, English) | https://claude.ai/code/artifact/e1734aba-0a07-4000-9772-bc9371f1d347 |
-| `~/workspace/sealchat` (SealTalk, 繁中；test accounts and seed data in the repo's `manual-test` skill; version file is `app/pubspec.yaml`) | https://claude.ai/code/artifact/4e058775-2ba7-42e6-9203-a4bc311e6ac4 |
+Each repo keeps what this skill needs in a `## Test plan` section of its
+`CLAUDE.md`:
 
-For a repo not in this table, ask the user where the plan should go, and add a
-row here only after they confirm.
+- the artifact URL, updated in place;
+- the page title and the `localStorage` key prefix for the tally;
+- the version file, when it is not `pubspec.yaml` at the root;
+- where test accounts and test data come from, and how to query them;
+- emulator or device specifics: AVD name, tool paths, known quirks.
+
+Read that section first and follow it wherever the steps below say "the
+repo's test-plan notes". If the repo has none, ask the user where the plan
+should go, and add the section to its `CLAUDE.md` only after they confirm.
 
 The plan is for **people**, not automation. Do not write unit or widget tests,
 and do not turn the page into a test report. The unit test result is at most
@@ -41,27 +46,15 @@ one line in the footer.
    - the path from a top-level screen to the feature (grep the route,
      `gotoPage`, or the button that opens it).
 3. **Pick test data that actually exercises each feature, and prove it.**
-   Before recommending a word, account, or affix, query the real source:
-   - tw.wordbranch.com through the `twClient` token in `lib/api/api.dart`
-     (`curl -H "Authorization: Token <token>" https://tw.wordbranch.com/api/...`),
-   - the offline DB: `sqlite3 assets/en.db "select id, word from word where word='...'"`.
-   An empty API answer means the word cannot demonstrate the feature: pick
-   another (for example, `greenhouse` has no analogy pairs and `authority` has 50+).
-   The porting-log artifacts ("WordBranch EN 移植日誌 <date>") record test
-   accounts and data in their 備註 notes; `Artifact` `list` + `read` them.
+   Before recommending an account or a piece of content, query the real
+   source the repo's test-plan notes name (its API, a bundled database, seed
+   data). An empty answer means that item cannot demonstrate the feature:
+   pick another.
 4. **Verify doubtful expectations on the emulator.** Follow
    `~/.claude/skills/work-summary/references/android.md` for booting, input and
-   capture. PRS specifics:
-   - AVD `Medium_Phone_API_36.1`; `adb` is at `~/Android/Sdk/platform-tools/adb`
-     (not on PATH).
-   - `flutter run -d emulator-5554 > <scratchpad>/flutter_run.log 2>&1` in the
-     background; the Gradle / AGP / Kotlin "support will soon be dropped" lines
-     are warnings. The app is up when the log has `DevTools debugger`.
-   - The log prints every request as `get https://...`. Use it to confirm that a
-     feature actually fetched.
-   - On the search page, typing may not trigger a search (known SearchBar
-     issue); send Enter (`input keyevent 66`).
-   - Look at every screenshot before relying on it.
+   capture, plus the repo's test-plan notes for its device specifics. Run the
+   app with its log teed to the scratchpad, and use the log to confirm that a
+   feature actually fetched. Look at every screenshot before relying on it.
 5. **When verification finds a bug**, never write the broken behaviour as the
    expected result. On that version's check, add a `已知錯誤` note saying what
    the tester will see, so they don't file it again. If a fix is made in the
@@ -79,7 +72,8 @@ one line in the footer.
 Start from the live page and keep its design (CSS tokens, both themes, fonts).
 Change the content, not the look.
 
-- `<title>` and `h1`: `PRS <from>–<to> 測試計畫` / `<from> 與 <to> 測試計畫`.
+- `<title>` and `h1`: the title the repo's test-plan notes give, e.g.
+  `<app> <from>–<to> 測試計畫` / `<from> 與 <to> 測試計畫`.
 - Lede: one paragraph on what each version is, ending with "每一項都在實機上用手操作".
 - **Version ledger**: version+build, commit, date, what changed. Rows under
   test get `class="focus"`; unreleased fixes get a `class="next"` row `下一版`.
@@ -89,8 +83,9 @@ Change the content, not the look.
   decision (a new default, data that isn't per account, a link to a page that
   doesn't exist). Build-only concerns go in a check's note instead.
 - **Sticky tally**: 通過 / 失敗 / 剩 N 項 plus 清除結果. Marks live in
-  `localStorage` under `prs-testplan-<newest version>`. Change the key when the
-  versions change, so old marks don't carry over.
+  `localStorage` under `<prefix>-<newest version>`, the prefix from the repo's
+  test-plan notes. Change the key when the versions change, so old marks don't
+  carry over.
 - **開始前準備**: devices, accounts, network, and a table of test words with
   why each one works.
 - **Sections by area** (`1.1.50 · 字典頁`, …). Each check is an
@@ -111,8 +106,7 @@ screen you saw.
 - **Same conversation as the last publish**: edit the scratchpad file and call
   `Artifact` with the same `file_path`.
 - **New conversation**: `Artifact` `action: "read"` with the URL. The full
-  HTML is saved to a file. Copy it to the scratchpad as `prs-test-plan.html`,
-  edit, then publish with `url` set to the fixed URL. Without `url`, a new
+  HTML is saved to a file. Copy it to the scratchpad, edit, then publish with `url` set to the fixed URL. Without `url`, a new
   artifact is created. Don't do that.
 - On a redeploy, omit `favicon` and `icon`, and pass a short `label` (e.g.
   `1.1.51 測試項目`).

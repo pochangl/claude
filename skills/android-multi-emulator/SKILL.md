@@ -94,8 +94,8 @@ For a non-Flutter app, install the same APK on each:
   `"$ADB" -s emulator-$P exec-out screencap -p > /tmp/shot-$P.png`.
 - Use a different account on each device when the app identifies people by
   user — the same account on two devices usually shows up as one person
-  twice. A project's own test-account skill (e.g. `e4f-test-accounts`) lists
-  which accounts to use.
+  twice. A project's own test-account skill or `CLAUDE.md` lists which
+  accounts to use.
 
 ## 5. Report and clean up
 
