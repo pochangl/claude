@@ -71,17 +71,16 @@ An instance that never shows up as `device`: report the tail of
 
 ## 3. Run the app on each
 
-Follow `flutter-android-run` steps 3–5 once per serial, with the tmux session
-and log named per device so they don't collide:
+Use `flutter-android-run`'s `flutter-run.sh` once per serial, with the
+session named per device so they don't collide (its exit codes and the hang
+check are documented there):
 
 ```bash
-S="$(basename "$PWD")-$P"; LOG="/tmp/flutter-run-$S.log"
-: > "$LOG"
-tmux new-session -d -s "$S" -c "$PWD" "flutter run -d emulator-$P 2>&1 | tee $LOG; exec bash"
+~/.claude/skills/flutter-android-run/flutter-run.sh start emulator-$P "$(basename "$PWD")-$P"
 ```
 
-Starting the runs one after another (wait for the first build to finish
-before starting the next) avoids several Gradle builds racing on the same
+Starting the runs one after another (the script returns once the first build is
+up; start the next after that) avoids several Gradle builds racing on the same
 `build/` directory; later runs reuse the built APK and start fast.
 
 For a non-Flutter app, install the same APK on each:
