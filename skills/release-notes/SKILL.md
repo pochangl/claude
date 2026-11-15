@@ -27,12 +27,23 @@ End users receive a multi-version range as one release. Long per-version lists w
 
 ## Output Format
 
-```
-**<final-version> 更新**
-- <highlight 1>
-- <highlight 2>
-- <highlight 3>
-```
+The reply has three parts, in this order:
+
+1. One line stating the range covered, e.g. `範圍是 3.9.31 之後到 3.9.35 的所有改動。`
+2. The note itself inside a fenced code block, so it can be copied whole into the store listing:
+
+   ````
+   ```
+   **<final-version> 更新**
+   - <highlight 1>
+   - <highlight 2>
+   - <highlight 3>
+   ```
+   ````
+
+3. One short paragraph after the block naming what was left out (the adjustments to existing features, in a parenthesised list of a few words each) and saying more bullets can be added on request.
+
+Nothing else goes inside the code block: the range line and the left-out paragraph stay outside it.
 
 ## What NOT to Do
 
