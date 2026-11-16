@@ -1,6 +1,6 @@
 ---
 name: add-optimize-skill
-description: Create a new optimize-* skill that enforces conventions for a specific technology or domain. Triggered via /add-optimize-skill command.
+description: Create a new optimize-* skill that enforces conventions for a specific technology or domain. Triggers on "/add-optimize-skill", and as soon as a conversation starts shaping rules meant to be reused — "generalize this", "make this a convention", "寫成 skill", "通用化", "以後都這樣做" — before the rules are settled, not only when the file is written.
 user-invocable: true
 ---
 
