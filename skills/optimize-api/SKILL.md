@@ -42,6 +42,8 @@ Adding a field is safe. To change a field's name, type or meaning, add a new fie
 - **Correct:** add `best_seconds` beside `best`, deprecate `best`, delete it after its date.
 - **Incorrect:** changing what `best` holds in place, or keeping both fields with no end date.
 
+A field that keeps its meaning but loses its use — the feature behind it is gone — is different: it stays in the response, marked potentially deprecated with no removal date (`optimize-comment` rule 6). Taking it out is a breaking change for every released client that parses the response.
+
 ## 5. One Implementation, Several Entrances
 
 The old and the new path route to one view or handler; they do not each get a copy. Where a backend has more than one implementation of the endpoint (e.g. Django and a Go port), each of them serves both paths from its own single handler.

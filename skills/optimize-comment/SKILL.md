@@ -5,7 +5,7 @@ description: Use this skill to write or optimize code comments. Triggers on ment
 
 A comment must explain something the reader cannot get from reading the code itself. If it does not, delete it.
 
-**Out of scope — never delete or rewrite these:** `TODO`, `FIXME`, `HACK`, `XXX`, `NOTE`, deprecation notes, license/copyright headers, and doc comments (`///`, docstrings, JSDoc). These are intentional markers about future work, known issues, or public API — not descriptions of current behavior. Rules 1–3 apply only to ordinary explanatory comments; rule 4 governs how a deprecation note is written. Rule 5 applies to every comment, doc comments included.
+**Out of scope — never delete or rewrite these:** `TODO`, `FIXME`, `HACK`, `XXX`, `NOTE`, deprecation notes, potentially-deprecated notes (rule 6), license/copyright headers, and doc comments (`///`, docstrings, JSDoc). These are intentional markers about future work, known issues, or public API — not descriptions of current behavior. Rules 1–3 apply only to ordinary explanatory comments; rule 4 governs how a deprecation note is written, rule 6 how a potentially-deprecated note is. Rule 5 applies to every comment, doc comments included.
 
 ## 1. Do Not Comment What Is Not In the Code
 
@@ -24,6 +24,8 @@ TabController(length: n)
 ```
 
 If omitting something is genuinely subtle and regression-prone, that belongs in a commit message or a test name, not an inline comment on absent code.
+
+A field, parameter or route that is still there but no longer used *is* in the code: comment it under rule 6, and do not delete that comment under this rule.
 
 ## 2. Do Not Comment Default / Framework Behavior
 
@@ -93,3 +95,25 @@ Never name an **unrelated** project — another product that merely shares an id
 ```
 
 Before finishing, grep the changed comments for the name of any unrelated project the work drew on, and for paths that exist neither in this repo nor in a related one.
+
+## 6. Mark What Is Kept On Purpose
+
+A field, parameter or route that is still in the code but no longer does anything is technical debt kept for a reason — usually released clients that still read it. Without a comment, the next cleanup deletes it for being unused. Say what it was for, which commit took away its use, why it stays, and mark it **potentially deprecated**. When it is to stay indefinitely, give no removal date: that is what separates it from a rule 4 deprecation.
+
+```python
+# Good — what it was for, what took its use away, why it stays
+# whether the caller has yet to use the one free trial: a client showed
+# the offer while this was true and started the trial by POSTing
+# product/subscription_trial/. That route was removed in a47fb9782, so nothing
+# starts a trial any more and no client acts on this.
+#
+# Potentially deprecated, and kept indefinitely: released clients parse
+# my_subscription_status/, and a field is not taken out of a response
+# they read. Do not remove it for being unused.
+can_trial = fields.BooleanField()
+
+# Bad — nothing says why an unused field is still here
+can_trial = fields.BooleanField()
+```
+
+Dropping the original purpose because the route it served is gone is the same mistake: the purpose is exactly what the reader cannot recover from the code.
