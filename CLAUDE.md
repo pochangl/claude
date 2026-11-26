@@ -34,3 +34,7 @@ memory.
 
 Say the line even when nothing was committed. At the end of a long reply this
 gets missed, which is the whole reason it goes first.
+
+End every reply with a line giving the execution time for that prompt. Measure
+it on the machine (`date +%s` when the work starts and again when it ends),
+never estimate it.
