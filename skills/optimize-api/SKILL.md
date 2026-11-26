@@ -64,3 +64,5 @@ Deploy the backend before any client that needs the change, and confirm it is li
 
 - **Correct:** deploy the backend, wait for it to report the new revision, then release the website and the app.
 - **Incorrect:** releasing a client that calls a path production does not serve yet.
+
+**Exception — the website.** A website can be redeployed at once, so it need not wait: it may go out before its backend change is live, and the feature that needs the backend may fail until it is. Only a change that would break a key feature — signing in or payment — waits for the backend as above. Released apps, which cannot be fixed in place, always wait.
