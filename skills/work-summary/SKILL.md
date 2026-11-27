@@ -58,7 +58,15 @@ run. If the range is missing entirely, default to today and say so.
 4. **Decide what each item needs to show.** For every item, name the screen or
    state that demonstrates it. An item with no visible surface (backend, build
    config) keeps its own section but gets no screenshot — do not fake one.
-5. **Run the app and capture.** Detect the platform from the project root:
+5. **Reuse the kept shots first.** Shots taken while working are kept by the
+   `keep-screenshots` skill in `summarize/screenshots/<YYYY-MM-DD>/`
+   (`python3 ~/.claude/skills/keep-screenshots/shot.py --dir <date>` prints the
+   folder). For each day in the range, look at every shot there with Read and
+   match it to an item by name and content; when an item has several, use the
+   latest one that shows the final state. Copy (never move) the chosen ones to
+   `summarize/<slug>/screenshots/<nn>-<short-name>.png`. Only items no kept
+   shot covers go on to step 6.
+6. **Run the app and capture** what step 5 left uncovered. Detect the platform from the project root:
    - `android/`, `app/build.gradle`, or a Flutter `pubspec.yaml` with an
      `android/` dir → **`references/android.md`**
    - `package.json` with next/vite/react/vue, or any static `index.html` →
@@ -67,10 +75,10 @@ run. If the range is missing entirely, default to today and say so.
    Read the matching reference before touching the emulator or the browser.
    Save every shot as `summarize/<slug>/screenshots/<nn>-<short-name>.png`,
    numbered in the order the items appear.
-6. **Write `manifest.json`** in `summarize/<slug>/` (schema below).
-7. **Build.** `python3 ~/.claude/skills/work-summary/build_summary.py
+7. **Write `manifest.json`** in `summarize/<slug>/` (schema below).
+8. **Build.** `python3 ~/.claude/skills/work-summary/build_summary.py
    summarize/<slug>/manifest.json [--format md]`. It prints the output path.
-8. **Report** the path and one line per item. Mention any item that ended up
+9. **Report** the path and one line per item. Mention any item that ended up
    without a screenshot and why.
 
 ## manifest.json
@@ -103,7 +111,9 @@ stays portable when the folder is zipped or moved.
 ## Rules
 
 - **Screenshots come from a running app.** Never draw a mock, reuse an old
-  asset, or describe a screen you did not see. If the app will not build or
+  asset, or describe a screen you did not see. Shots kept in
+  `summarize/screenshots/` on a day inside the range are real captures and
+  count (step 5); ones from outside the range do not. If the app will not build or
   boot, stop and report that instead — a summary with invented screenshots is
   worse than none.
 - Re-running for the same range overwrites that range's directory; leave other
